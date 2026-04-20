@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>رسالة رؤى | Roaa's Love Letter</title>
-  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,10 +21,10 @@
 
     .stage1 { cursor: pointer; }
     .stage2 { cursor: pointer; }
-    .stage3 .envelope-container { 
-      opacity: 0.3; 
-      pointer-events: none; 
-      transform: scale(0.8); 
+    .stage3 .envelope-container {
+      opacity: 0.3;
+      pointer-events: none;
+      transform: scale(0.8);
     }
 
     .envelope-container {
@@ -32,9 +32,7 @@
       transition: all 0.5s ease;
       z-index: 5;
     }
-    .envelope-container:hover {
-      transform: scale(1.05);
-    }
+    .envelope-container:hover { transform: scale(1.05); }
 
     .envelope {
       width: 320px;
@@ -97,9 +95,7 @@
       transform: translateY(20px);
       transition: transform 0.5s ease 1.2s;
     }
-    .stage2 .tip-text {
-      transform: translateY(0);
-    }
+    .stage2 .tip-text { transform: translateY(0); }
 
     .pull-text {
       position: absolute;
@@ -117,9 +113,7 @@
       text-align: center;
       width: 85%;
     }
-    .stage2 .pull-text {
-      opacity: 1;
-    }
+    .stage2 .pull-text { opacity: 1; }
     .stage3 .pull-text {
       opacity: 0;
       visibility: hidden;
@@ -149,7 +143,7 @@
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 12px 35px rgba(255, 107, 157, 0.5);
-      transition: all 0.3s ease;
+      transition: all 0.3s.ease;
       z-index: 7;
     }
     .open-btn:hover {
@@ -270,16 +264,27 @@ HAPPY BIRTHDAY ROAA
   <script>
     let stage = 1;
     let heartsInterval = null;
+
     const bgMusic = document.getElementById('bgMusic');
     const voice = document.getElementById('voice');
 
-    // عدد الثواني التي تُحذف من نهاية صوتك (الافتراضي 2)
-    const CUT_SECONDS = 1.7; // غيّرها لاحقًا لو حبيت (1, 3, 0...)
+    // === إعدادات الصوت التي تتحكم بها أنت ===
+    const CUT_SECONDS = 2;          // كم ثانية تُحذف من نهاية تسجيلك
+    const VOICE_GAIN = 1.0;         // قوة صوتك أثناء القراءة (gain)
+    const MUSIC_GAIN_DURING = 0.08; // قوة الموسيقى أثناء قراءتك
+    const MUSIC_GAIN_AFTER = 0.5;   // قوة الموسيقى بعد انتهاء/إيقاف صوتك
+    const MUSIC_FADE_BEFORE_END = 3; // متى تبدأ الموسيقى ترتفع قبل النهاية (ثواني)
+    // =====================================
 
-    // لتخزين مدة التسجيل
+    let audioCtx = null;
+    let voiceSource = null;
+    let musicSource = null;
+    let voiceGainNode = null;
+    let musicGainNode = null;
+
     let voiceDuration = null;
 
-    // عند تحميل بيانات الصوت، نقرأ مدته
+    // نقرأ مدة تسجيلك عند تحميله
     voice.addEventListener('loadedmetadata', () => {
       voiceDuration = voice.duration;
     });
@@ -289,71 +294,98 @@ HAPPY BIRTHDAY ROAA
       e.stopPropagation();
 
       if (stage === 1) {
-        // فتح الظرف
         document.body.classList.remove('stage1');
         document.body.classList.add('stage2');
         document.getElementById('envelopeContainer').classList.add('stage2');
         stage = 2;
       } else if (stage === 2) {
-        // سحب الرسالة وفتحها
         document.body.classList.remove('stage2');
         document.body.classList.add('stage3');
         document.getElementById('envelopeContainer').classList.add('stage3');
         stage = 3;
-        startHeartsLoop();        
-        startAudioScenario();
+        startHeartsLoop();
+        startAudioScenarioWithWebAudio();
       }
     });
 
-    function startAudioScenario() {
+    function initAudioContextIfNeeded() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+
+      if (!voiceSource) {
+        voiceSource = audioCtx.createMediaElementSource(voice);
+      }
+      if (!musicSource) {
+        musicSource = audioCtx.createMediaElementSource(bgMusic);
+      }
+
+      if (!voiceGainNode) {
+        voiceGainNode = audioCtx.createGain();
+        voiceGainNode.gain.value = VOICE_GAIN;
+        voiceSource.connect(voiceGainNode).connect(audioCtx.destination);
+      }
+
+      if (!musicGainNode) {
+        musicGainNode = audioCtx.createGain();
+        musicGainNode.gain.value = 0; // نبدأ الموسيقى صامتة
+        musicSource.connect(musicGainNode).connect(audioCtx.destination);
+      }
+    }
+
+    function startAudioScenarioWithWebAudio() {
       if (!bgMusic || !voice) return;
 
-      // مستوى صوتك (عدّل الرقم كما تريد بين 0 و 1)
-      voice.volume = 0.06;
+      initAudioContextIfNeeded();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
 
-      // الأغنية منخفضة جدًا أثناء القراءة
-      bgMusic.volume = 0.003;
+      // نضبط قيم البداية:
+      voiceGainNode.gain.setValueAtTime(VOICE_GAIN, audioCtx.currentTime);
+      musicGainNode.gain.setValueAtTime(MUSIC_GAIN_DURING, audioCtx.currentTime);
 
       bgMusic.play().catch(err => {
         console.log('لم يتم تشغيل bgMusic:', err);
       });
 
       voice.play().then(() => {
-        // إذا عرفنا مدة الصوت، نوقفه قبل نهايته بـ CUT_SECONDS
         if (voiceDuration && voiceDuration > CUT_SECONDS) {
-          const playUntilMs = (voiceDuration - CUT_SECONDS) * 1000;
-          setTimeout(() => {
-            voice.pause();
-            voice.currentTime = voiceDuration - CUT_SECONDS;
-            fadeInMusicToCustomLevel();
-          }, playUntilMs);
+          const playUntil = voiceDuration - CUT_SECONDS;
+          const fadeStart = Math.max(0, playUntil - MUSIC_FADE_BEFORE_END);
+
+          // نرفع الموسيقى تدريجيًا من MUSIC_GAIN_DURING إلى MUSIC_GAIN_AFTER
+          const now = audioCtx.currentTime;
+          const fadeStartAt = now + Math.max(0, fadeStart - voice.currentTime);
+          const fadeEndAt = now + Math.max(0, playUntil - voice.currentTime);
+
+          musicGainNode.gain.cancelScheduledValues(now);
+          musicGainNode.gain.setValueAtTime(musicGainNode.gain.value, now);
+          musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, fadeEndAt);
+
+          const msUntilStop = (playUntil - voice.currentTime) * 1000;
+          if (msUntilStop > 0) {
+            setTimeout(() => {
+              try {
+                voice.pause();
+                voice.currentTime = playUntil;
+              } catch (e) {
+                console.log('خطأ عند إيقاف الصوت قبل النهاية:', e);
+              }
+            }, msUntilStop);
+          }
         } else {
-          // لو ما عرفنا المدة لأي سبب، نستخدم ended العادي
           voice.addEventListener('ended', () => {
-            fadeInMusicToCustomLevel();
+            const now = audioCtx.currentTime;
+            musicGainNode.gain.cancelScheduledValues(now);
+            musicGainNode.gain.setValueAtTime(musicGainNode.gain.value, now);
+            musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, now + 1.5);
           }, { once: true });
         }
       }).catch(err => {
         console.log('لم يتم تشغيل voice:', err);
       });
-    }
-
-    function fadeInMusicToCustomLevel() {
-      // مستوى الأغنية بعد انتهاء صوتك (عدّل الرقم كما تريد بين 0 و 1)
-      const targetVolume = 0.005;
-      const step = 0.03;
-      const intervalTime = 150;
-
-      let currentVolume = bgMusic.volume || 0;
-
-      const fadeInterval = setInterval(() => {
-        currentVolume += step;
-        if (currentVolume >= targetVolume) {
-          currentVolume = targetVolume;
-          clearInterval(fadeInterval);
-        }
-        bgMusic.volume = currentVolume;
-      }, intervalTime);
     }
 
     function createOneHeart() {
