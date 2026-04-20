@@ -17,6 +17,31 @@
       justify-content: center;
       overflow-x: hidden;
       position: relative;
+      padding-top: 70px; /* مساحة للعداد في الأعلى */
+    }
+
+    .countdown-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 10px 15px;
+      text-align: center;
+      background: linear-gradient(90deg, #ff9a9e, #fecfef);
+      color: #6b1c2b;
+      font-family: 'Aref Ruqaa', serif;
+      z-index: 10000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .countdown-time {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .countdown-label {
+      font-size: 14px;
     }
 
     .stage1 { cursor: pointer; }
@@ -211,96 +236,15 @@
       0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
       100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
     }
-
-    /* شاشة الانتظار */
-    .wait-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 20px;
-      color: #fff;
-      font-family: 'Aref Ruqaa', serif;
-      overflow: hidden;
-    }
-
-    .wait-overlay::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-      background-size: 400% 400%;
-      animation: gradientMove 15s ease infinite;
-      z-index: -2;
-    }
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    .wait-overlay::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 60%),
-                  radial-gradient(circle at bottom right, rgba(0,0,0,0.2), transparent 60%);
-      mix-blend-mode: screen;
-      z-index: -1;
-    }
-
-    .wait-message {
-      font-size: clamp(20px, 5vw, 26px);
-      font-weight: 700;
-      margin-bottom: 15px;
-    }
-
-    .wait-subtext {
-      font-size: clamp(14px, 4vw, 18px);
-      opacity: 0.9;
-      max-width: 480px;
-      line-height: 1.7;
-      margin-bottom: 20px;
-    }
-
-    .wait-countdown {
-      font-size: clamp(18px, 5vw, 24px);
-      font-weight: 700;
-      margin-top: 10px;
-    }
-
-    .wait-countdown-label {
-      font-size: clamp(14px, 4vw, 18px);
-      margin-top: 6px;
-      opacity: 0.95;
-    }
-
-    .wait-spinner {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 4px solid rgba(255,255,255,0.4);
-      border-top-color: #fff;
-      animation: spin 1s linear infinite;
-      margin-bottom: 18px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
   </style>
 </head>
 <body class="stage1">
-  <!-- شاشة الانتظار -->
-  <div class="wait-overlay" id="waitOverlay">
-    <div class="wait-spinner"></div>
-    <div class="wait-message" id="waitMessage"></div>
-    <div class="wait-subtext" id="waitSubtext"></div>
-    <div class="wait-countdown" id="waitCountdown" style="display:none;"></div>
-    <div class="wait-countdown-label" id="waitCountdownLabel" style="display:none;"></div>
+  <!-- شريط العداد في الأعلى -->
+  <div class="countdown-bar">
+    <div class="countdown-time" id="countdownTime">--:--:--</div>
+    <div class="countdown-label" id="countdownLabel">
+      الوقت المتبقي حتى تبدأ اللحظة الخاصة ✨
+    </div>
   </div>
 
   <div class="hearts" id="hearts"></div>
@@ -348,132 +292,35 @@ HAPPY BIRTHDAY ROAA
     // ===== إعدادات وقت الحدث =====
     // بداية يوم 23 أبريل 2026 بتوقيت الرياض +03
     const EVENT_DATE = new Date("2026-04-23T00:00:00+03:00");
-    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
-    // رسائل مشوقة بالعربية والإنجليزية مع إيموجي (قائمة موسعة)
-    const waitMessages = [
-      {
-        msg: "ليس هذا هو الوقت المناسب بعد ⏳",
-        sub: "هناك شيء جميل يُحضَّر لكِ بهدوء.. عودي لاحقًا وستفهمين كل شيء 💫"
-      },
-      {
-        msg: "Not yet... but soon ✨",
-        sub: "Some magic is being prepared just for you. Come back a bit later 💌"
-      },
-      {
-        msg: "اللحظة السحرية لم تصل بعد 🎭",
-        sub: "أغلقي الصفحة الآن، وعودي حين يخبرك قلبك أن الوقت أصبح مختلفًا 💖"
-      },
-      {
-        msg: "Almost, but not quite 🌙",
-        sub: "The story is still being written. Check back when the night feels a bit more special 🌌"
-      },
-      {
-        msg: "لسه بدري على المفاجأة 😏",
-        sub: "في الكواليس، شيء صغير يكبر من أجل ابتسامتك فقط.. عودي قريبًا 🎀"
-      },
-      {
-        msg: "Patience, beautiful soul 💫",
-        sub: "Every great surprise needs the perfect timing. This isn’t it… yet 😉"
-      },
-      {
-        msg: "الكون يجهّز لك لحظة خاصة 🌠",
-        sub: "في مكانٍ ما بين الزمن والصدفة، مفاجأة صغيرة تنتظر الدقيقة المناسبة لتظهر لكِ 💌"
-      },
-      {
-        msg: "The stars are not aligned yet ⭐",
-        sub: "When they are, this page will feel very different. Try again later ✨"
-      },
-      {
-        msg: "قلبٌ ما زال يكتب لك شيئًا 💭",
-        sub: "هو لا يريدك أن تريه الآن.. يريدك أن تريه عندما تكون روحك في مزاج المفاجآت 💝"
-      },
-      {
-        msg: "The door is almost open 🚪",
-        sub: "But not for this moment. Close this tab and come back when time feels a bit more magical ✨"
-      },
-      {
-        msg: "اليوم العادي سيتحوّل قريبًا لشيء مختلف 🎁",
-        sub: "اتركي هذا الرابط الآن، وعودي عندما تشعرين أن قلبك يهمس لك بالعودة 💓"
-      },
-      {
-        msg: "Not your moment… yet ⌛",
-        sub: "The moment is coming, but this isn’t it. Let curiosity rest for a little while 😉"
-      },
-      {
-        msg: "هناك سرّ صغير يكتمل خلف الكواليس 🎬",
-        sub: "اتركي هذه الشاشة الآن، فالمفاجآت لا تحب من يسبقها بثوانٍ كثيرة 💕"
-      },
-      {
-        msg: "Soon this link will feel different 🌸",
-        sub: "For now, let it sleep. Come back when the date feels a bit more special 🌙"
-      }
-    ];
+    const countdownTimeEl = document.getElementById("countdownTime");
+    const countdownLabelEl = document.getElementById("countdownLabel");
 
-    function pickRandomMessage() {
-      const idx = Math.floor(Math.random() * waitMessages.length);
-      return waitMessages[idx]; // [web:86]
-    }
-
-    const waitOverlay = document.getElementById("waitOverlay");
-    const waitMessageEl = document.getElementById("waitMessage");
-    const waitSubtextEl = document.getElementById("waitSubtext");
-    const waitCountdownEl = document.getElementById("waitCountdown");
-    const waitCountdownLabelEl = document.getElementById("waitCountdownLabel");
-
-    // نختار عبارة واحدة فقط لكل تحميل صفحة
-    const pickedMessageOnce = pickRandomMessage();
-
-    function updateWaitScreen() {
+    function updateCountdown() {
       const now = new Date();
       const diff = EVENT_DATE.getTime() - now.getTime();
 
       if (diff <= 0) {
-        waitOverlay.style.display = "none";
+        countdownTimeEl.textContent = "00:00:00";
+        countdownLabelEl.textContent = "حان الوقت الآن ✨";
         return;
       }
 
-      waitMessageEl.textContent = pickedMessageOnce.msg;
-      waitSubtextEl.textContent = pickedMessageOnce.sub;
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
 
-      if (diff <= SIX_HOURS_MS) {
-        waitCountdownEl.style.display = "block";
-        waitCountdownLabelEl.style.display = "block";
+      const pad = (n) => (n < 10 ? "0" + n : "" + n);
 
-        const totalSeconds = Math.floor(diff / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        const pad = (n) => (n < 10 ? "0" + n : "" + n);
-
-        waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:91][web:95]
-        waitCountdownLabelEl.textContent = "الوقت يقترب... العد التنازلي بدأ فعلاً ⏰";
-      } else {
-        waitCountdownEl.style.display = "none";
-        waitCountdownLabelEl.style.display = "none";
-      }
-
-      waitOverlay.style.display = "flex";
+      countdownTimeEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:91][web:95]
     }
 
-    function startWaitTimer() {
-      updateWaitScreen();
-      const interval = setInterval(() => {
-        const now = new Date();
-        const diff = EVENT_DATE.getTime() - now.getTime();
-        if (diff <= 0) {
-          clearInterval(interval);
-          waitOverlay.style.display = "none";
-        } else {
-          updateWaitScreen();
-        }
-      }, 1000);
-    }
+    // بدء العداد فورًا
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
 
-    startWaitTimer();
-
-    // ===== كود الصوت والقلوب كما تم ضبطه =====
+    // ===== كود الصوت والقلوب كما تم ضبطه سابقًا =====
     let stage = 1;
     let heartsInterval = null;
 
