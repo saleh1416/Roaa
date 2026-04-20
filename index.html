@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رسالة رؤى | Roaa's Love Letter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Aref Ruqaa', serif;
+      background: linear-gradient(135deg, #ffeef0 0%, #fff5f8 50%, #ffeef0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .stage1 { cursor: pointer; }
+    .stage2 { cursor: pointer; }
+    .stage3 .envelope-container { 
+      opacity: 0.3; 
+      pointer-events: none; 
+      transform: scale(0.8); 
+    }
+
+    .envelope-container {
+      position: relative;
+      transition: all 0.5s ease;
+      z-index: 5;
+    }
+    .envelope-container:hover {
+      transform: scale(1.05);
+    }
+
+    .envelope {
+      width: 320px;
+      height: 210px;
+      position: relative;
+      margin: 20px;
+    }
+
+    .envelope-back {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #ff9a9e, #fecfef);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 20px 40px rgba(255, 154, 158, 0.4);
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: -50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 160px solid transparent;
+      border-right: 160px solid transparent;
+      border-bottom: 65px solid #ff6b9d;
+      transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 4;
+    }
+    .stage2 .envelope-flap {
+      transform: translateX(-50%) rotateX(180deg);
+    }
+
+    .letter-tip {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 45px;
+      background: linear-gradient(180deg, #fff8e1 0%, #fff3cd 100%);
+      border-radius: 10px 10px 0 0;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      opacity: 0;
+      transition: all 0.6s ease 0.8s;
+      z-index: 3;
+      overflow: hidden;
+    }
+    .stage2 .letter-tip {
+      opacity: 1;
+      top: 25px;
+    }
+
+    .tip-text {
+      font-family: 'Aref Ruqaa', serif;
+      font-size: 14px;
+      color: #8b4513;
+      line-height: 1.3;
+      padding: 5px 8px;
+      transform: translateY(20px);
+      transition: transform 0.5s ease 1.2s;
+    }
+    .stage2 .tip-text {
+      transform: translateY(0);
+    }
+
+    .pull-text {
+      position: absolute;
+      top: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Aref Ruqaa', serif;
+      font-size: 16px;
+      color: #ff6b9d;
+      font-weight: bold;
+      opacity: 0;
+      transition: all 0.5s ease;
+      pointer-events: none;
+      z-index: 6;
+      text-align: center;
+      width: 85%;
+    }
+    .stage2 .pull-text {
+      opacity: 1;
+    }
+    .stage3 .pull-text {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .pull-subtext {
+      margin-top: 10px;
+      font-family: 'Aref Ruqaa', serif;
+      font-size: 12px;
+      color: #6b3c1f;
+      line-height: 1.7;
+      word-wrap: break-word;
+    }
+
+    .open-btn {
+      position: absolute;
+      top: -85px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(45deg, #ff6b9d, #ff8fab);
+      color: white;
+      border: none;
+      padding: 14px 35px;
+      border-radius: 35px;
+      font-family: 'Aref Ruqaa', serif;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 12px 35px rgba(255, 107, 157, 0.5);
+      transition: all 0.3s ease;
+      z-index: 7;
+    }
+    .open-btn:hover {
+      transform: translateX(-50%) translateY(-4px);
+      box-shadow: 0 18px 45px rgba(255, 107, 157, 0.7);
+    }
+
+    .letter-content {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 90vw;
+      max-width: 380px;
+      max-height: 85vh;
+      background: linear-gradient(180deg, #fff8e1 0%, #fff3cd 100%);
+      border-radius: 25px;
+      padding: 40px 30px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 15;
+      overflow-y: auto;
+      border: 4px solid #ff9a9e;
+    }
+    .stage3 .letter-content {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .letter-text {
+      font-family: 'Aref Ruqaa', serif;
+      font-size: clamp(16px, 4vw, 20px);
+      line-height: 1.9;
+      color: #8b4513;
+      text-align: justify;
+      white-space: pre-line;
+      direction: rtl;
+    }
+
+    .birthday-wish {
+      margin-top: 25px;
+      text-align: center;
+      font-family: 'Caveat', cursive;
+      font-size: clamp(24px, 6vw, 32px);
+      color: #ff6b9d;
+      font-weight: 700;
+      line-height: 1.1;
+      padding-top: 20px;
+      border-top: 2px dashed #ff9a9e;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+      white-space: nowrap;
+    }
+
+    .hearts {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .heart {
+      position: absolute;
+      font-size: 24px;
+      animation: floatHeart 10s linear infinite;
+      opacity: 0.8;
+    }
+    @keyframes floatHeart {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="stage1">
+  <div class="hearts" id="hearts"></div>
+
+  <!-- أغنية عيد الميلاد -->
+  <audio id="bgMusic" src="audio.m4a" preload="auto" loop></audio>
+
+  <!-- تسجيل صوتك -->
+  <audio id="voice" src="voice.m4a" preload="auto"></audio>
+
+  <div class="envelope-container" id="envelopeContainer">
+    <button class="open-btn">افتحي الرسالة 💌</button>
+
+    <div class="envelope">
+      <div class="envelope-back"></div>
+      <div class="envelope-flap"></div>
+      <div class="letter-tip">
+        <div class="tip-text">إلى توأم روحي</div>
+      </div>
+      <div class="pull-text">
+        اسحبي الرسالة
+        <div class="pull-subtext">
+قبل أن تسحبي الرساله وتكتمل الحكاية..
+أريد لقلبكِ أن يسمع ما عجزتُ عن قوله.
+ارفعي صوت جهازكِ قليلاً، ودعي اللحن يخبركِ كم أشتاق إليكِ الآن.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="letter-content" id="letterContent">
+    <div class="letter-text">
+إلى توأم روحي وسيدة قلبي..
+
+في كل سنة يأتي يوم ميلادك، أشعر أن العالم يحتفل معكِ، وكأن الحياة تشكركِ لأنكِ منحتِها هذا الجمال. حبيبتي، أنتِ لستِ مجرد زوجة، أنتِ الملاذ الذي أهرع إليه من ضجيج العالم، والسكينة التي تملأ روحي حين تضيق بي السبل.
+
+أكتب لكِ وكلماتي تسبقها نبضات شوقي؛ فمهما كنا قريبين، يظل في قلبي حنين دائم إليكِ، وشغف لا ينطفئ لرؤية ابتسامتكِ التي تجعل كل شيء بخير. أتمنى في عامكِ الجديد أن تحيطكِ السعادة من كل جانب، وأن يظل حبنا ينمو ويزهر، لنصنع ذكريات أجمل وأعمق. كل عام وأنتِ الحب، وكل عام وأنتِ أجمل عطايا الرحمن لي.
+    </div>
+    <div class="birthday-wish">
+HAPPY BIRTHDAY ROAA
+    </div>
+  </div>
+
+  <script>
+    let stage = 1;
+    let heartsInterval = null;
+    const bgMusic = document.getElementById('bgMusic');
+    const voice = document.getElementById('voice');
+
+    // عدد الثواني التي تُحذف من نهاية صوتك (الافتراضي 2)
+    const CUT_SECONDS = 1.7; // غيّرها لاحقًا لو حبيت (1, 3, 0...)
+
+    // لتخزين مدة التسجيل
+    let voiceDuration = null;
+
+    // عند تحميل بيانات الصوت، نقرأ مدته
+    voice.addEventListener('loadedmetadata', () => {
+      voiceDuration = voice.duration;
+    });
+
+    document.getElementById('envelopeContainer').addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (stage === 1) {
+        // فتح الظرف
+        document.body.classList.remove('stage1');
+        document.body.classList.add('stage2');
+        document.getElementById('envelopeContainer').classList.add('stage2');
+        stage = 2;
+      } else if (stage === 2) {
+        // سحب الرسالة وفتحها
+        document.body.classList.remove('stage2');
+        document.body.classList.add('stage3');
+        document.getElementById('envelopeContainer').classList.add('stage3');
+        stage = 3;
+        startHeartsLoop();        
+        startAudioScenario();
+      }
+    });
+
+    function startAudioScenario() {
+      if (!bgMusic || !voice) return;
+
+      // مستوى صوتك (عدّل الرقم كما تريد بين 0 و 1)
+      voice.volume = 0.06;
+
+      // الأغنية منخفضة جدًا أثناء القراءة
+      bgMusic.volume = 0.003;
+
+      bgMusic.play().catch(err => {
+        console.log('لم يتم تشغيل bgMusic:', err);
+      });
+
+      voice.play().then(() => {
+        // إذا عرفنا مدة الصوت، نوقفه قبل نهايته بـ CUT_SECONDS
+        if (voiceDuration && voiceDuration > CUT_SECONDS) {
+          const playUntilMs = (voiceDuration - CUT_SECONDS) * 1000;
+          setTimeout(() => {
+            voice.pause();
+            voice.currentTime = voiceDuration - CUT_SECONDS;
+            fadeInMusicToCustomLevel();
+          }, playUntilMs);
+        } else {
+          // لو ما عرفنا المدة لأي سبب، نستخدم ended العادي
+          voice.addEventListener('ended', () => {
+            fadeInMusicToCustomLevel();
+          }, { once: true });
+        }
+      }).catch(err => {
+        console.log('لم يتم تشغيل voice:', err);
+      });
+    }
+
+    function fadeInMusicToCustomLevel() {
+      // مستوى الأغنية بعد انتهاء صوتك (عدّل الرقم كما تريد بين 0 و 1)
+      const targetVolume = 0.005;
+      const step = 0.03;
+      const intervalTime = 150;
+
+      let currentVolume = bgMusic.volume || 0;
+
+      const fadeInterval = setInterval(() => {
+        currentVolume += step;
+        if (currentVolume >= targetVolume) {
+          currentVolume = targetVolume;
+          clearInterval(fadeInterval);
+        }
+        bgMusic.volume = currentVolume;
+      }, intervalTime);
+    }
+
+    function createOneHeart() {
+      const hearts = document.getElementById('hearts');
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.innerHTML = ['💕', '💖', '💗', '💝', '💘'][Math.floor(Math.random() * 5)];
+      heart.style.left = Math.random() * 100 + '%';
+      heart.style.animationDuration = (Math.random() * 4 + 6) + 's';
+      hearts.appendChild(heart);
+
+      setTimeout(() => heart.remove(), 10000);
+    }
+
+    function startHeartsLoop() {
+      for (let i = 0; i < 15; i++) {
+        setTimeout(createOneHeart, i * 200);
+      }
+      heartsInterval = setInterval(createOneHeart, 400);
+    }
+  </script>
+</body>
+</html>
