@@ -228,7 +228,6 @@
       overflow: hidden;
     }
 
-    /* خلفية متحركة جذابة */
     .wait-overlay::before {
       content: "";
       position: absolute;
@@ -351,7 +350,7 @@ HAPPY BIRTHDAY ROAA
     const EVENT_DATE = new Date("2026-04-23T00:00:00+03:00");
     const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
-    // رسائل مشوقة بالعربية والإنجليزية مع إيموجي
+    // رسائل مشوقة بالعربية والإنجليزية مع إيموجي (قائمة موسعة)
     const waitMessages = [
       {
         msg: "ليس هذا هو الوقت المناسب بعد ⏳",
@@ -376,6 +375,30 @@ HAPPY BIRTHDAY ROAA
       {
         msg: "Patience, beautiful soul 💫",
         sub: "Every great surprise needs the perfect timing. This isn’t it… yet 😉"
+      },
+      {
+        msg: "الكون يجهّز لك لحظة خاصة 🌠",
+        sub: "في مكانٍ ما بين الزمن والصدفة، مفاجأة صغيرة تنتظر الدقيقة المناسبة لتظهر لكِ 💌"
+      },
+      {
+        msg: "The stars are not aligned yet ⭐",
+        sub: "When they are, this page will feel very different. Try again later ✨"
+      },
+      {
+        msg: "قلبٌ ما زال يكتب لك شيئًا 💭",
+        sub: "هو لا يريدك أن تريه الآن.. يريدك أن تريه عندما تكون روحك في مزاج المفاجآت 💝"
+      },
+      {
+        msg: "The door is almost open 🚪",
+        sub: "But not for this moment. Close this tab and come back when time feels a bit more magical ✨"
+      },
+      {
+        msg: "اليوم العادي سيتحوّل قريبًا لشيء مختلف 🎁",
+        sub: "اتركي هذا الرابط الآن، وعودي عندما تشعرين أن قلبك يهمس لك بالعودة 💓"
+      },
+      {
+        msg: "Not your moment… yet ⌛",
+        sub: "The moment is coming, but this isn’t it. Let curiosity rest for a little while 😉"
       }
     ];
 
@@ -390,23 +413,23 @@ HAPPY BIRTHDAY ROAA
     const waitCountdownEl = document.getElementById("waitCountdown");
     const waitCountdownLabelEl = document.getElementById("waitCountdownLabel");
 
+    // نختار عبارة واحدة فقط لكل تحميل صفحة
+    const pickedMessageOnce = pickRandomMessage();
+
     function updateWaitScreen() {
       const now = new Date();
       const diff = EVENT_DATE.getTime() - now.getTime();
 
       if (diff <= 0) {
-        // الحدث بدأ أو انتهى → أخفي شاشة الانتظار
         waitOverlay.style.display = "none";
         return;
       }
 
-      // اختر رسالة عشوائية في كل زيارة
-      const picked = pickRandomMessage();
-      waitMessageEl.textContent = picked.msg;
-      waitSubtextEl.textContent = picked.sub;
+      // الرسالة المختارة لهذا الدخول
+      waitMessageEl.textContent = pickedMessageOnce.msg;
+      waitSubtextEl.textContent = pickedMessageOnce.sub;
 
       if (diff <= SIX_HOURS_MS) {
-        // أقل من 6 ساعات → إظهار عداد تنازلي [web:90]
         waitCountdownEl.style.display = "block";
         waitCountdownLabelEl.style.display = "block";
 
@@ -444,7 +467,6 @@ HAPPY BIRTHDAY ROAA
     startWaitTimer();
 
     // ===== كود الصوت والقلوب كما تم ضبطه =====
-
     let stage = 1;
     let heartsInterval = null;
 
