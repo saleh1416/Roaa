@@ -104,7 +104,7 @@
       color: #ff6b9d;
       font-weight: bold;
       opacity: 0;
-      transition: all 0.5s.ease;
+      transition: all 0.5s ease;
       pointer-events: none;
       z-index: 6;
       text-align: center;
@@ -211,9 +211,99 @@
       0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
       100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
     }
+
+    /* شاشة الانتظار */
+    .wait-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: #fff;
+      font-family: 'Aref Ruqaa', serif;
+      overflow: hidden;
+    }
+
+    /* خلفية متحركة جذابة */
+    .wait-overlay::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+      z-index: -2;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .wait-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(0,0,0,0.2), transparent 60%);
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+
+    .wait-message {
+      font-size: clamp(20px, 5vw, 26px);
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .wait-subtext {
+      font-size: clamp(14px, 4vw, 18px);
+      opacity: 0.9;
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .wait-countdown {
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .wait-countdown-label {
+      font-size: clamp(14px, 4vw, 18px);
+      margin-top: 6px;
+      opacity: 0.95;
+    }
+
+    .wait-spinner {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+      margin-bottom: 18px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="stage1">
+  <!-- شاشة الانتظار -->
+  <div class="wait-overlay" id="waitOverlay">
+    <div class="wait-spinner"></div>
+    <div class="wait-message" id="waitMessage"></div>
+    <div class="wait-subtext" id="waitSubtext"></div>
+    <div class="wait-countdown" id="waitCountdown" style="display:none;"></div>
+    <div class="wait-countdown-label" id="waitCountdownLabel" style="display:none;"></div>
+  </div>
+
   <div class="hearts" id="hearts"></div>
 
   <!-- أغنية عيد الميلاد -->
@@ -256,20 +346,117 @@ HAPPY BIRTHDAY ROAA
   </div>
 
   <script>
+    // ===== إعدادات وقت الحدث =====
+    // بداية يوم 23 أبريل 2026 بتوقيت الرياض +03
+    const EVENT_DATE = new Date("2026-04-23T00:00:00+03:00");
+    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
+    // رسائل مشوقة بالعربية والإنجليزية مع إيموجي
+    const waitMessages = [
+      {
+        msg: "ليس هذا هو الوقت المناسب بعد ⏳",
+        sub: "هناك شيء جميل يُحضَّر لكِ بهدوء.. عودي لاحقًا وستفهمين كل شيء 💫"
+      },
+      {
+        msg: "Not yet... but soon ✨",
+        sub: "Some magic is being prepared just for you. Come back a bit later 💌"
+      },
+      {
+        msg: "اللحظة السحرية لم تصل بعد 🎭",
+        sub: "أغلقي الصفحة الآن، وعودي حين يخبرك قلبك أن الوقت أصبح مختلفًا 💖"
+      },
+      {
+        msg: "Almost, but not quite 🌙",
+        sub: "The story is still being written. Check back when the night feels a bit more special 🌌"
+      },
+      {
+        msg: "لسه بدري على المفاجأة 😏",
+        sub: "في الكواليس، شيء صغير يكبر من أجل ابتسامتك فقط.. عودي قريبًا 🎀"
+      },
+      {
+        msg: "Patience, beautiful soul 💫",
+        sub: "Every great surprise needs the perfect timing. This isn’t it… yet 😉"
+      }
+    ];
+
+    function pickRandomMessage() {
+      const idx = Math.floor(Math.random() * waitMessages.length);
+      return waitMessages[idx]; // [web:86]
+    }
+
+    const waitOverlay = document.getElementById("waitOverlay");
+    const waitMessageEl = document.getElementById("waitMessage");
+    const waitSubtextEl = document.getElementById("waitSubtext");
+    const waitCountdownEl = document.getElementById("waitCountdown");
+    const waitCountdownLabelEl = document.getElementById("waitCountdownLabel");
+
+    function updateWaitScreen() {
+      const now = new Date();
+      const diff = EVENT_DATE.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        // الحدث بدأ أو انتهى → أخفي شاشة الانتظار
+        waitOverlay.style.display = "none";
+        return;
+      }
+
+      // اختر رسالة عشوائية في كل زيارة
+      const picked = pickRandomMessage();
+      waitMessageEl.textContent = picked.msg;
+      waitSubtextEl.textContent = picked.sub;
+
+      if (diff <= SIX_HOURS_MS) {
+        // أقل من 6 ساعات → إظهار عداد تنازلي [web:90]
+        waitCountdownEl.style.display = "block";
+        waitCountdownLabelEl.style.display = "block";
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        const pad = (n) => (n < 10 ? "0" + n : "" + n);
+
+        waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        waitCountdownLabelEl.textContent = "الوقت يقترب... العد التنازلي بدأ فعلاً ⏰";
+      } else {
+        waitCountdownEl.style.display = "none";
+        waitCountdownLabelEl.style.display = "none";
+      }
+
+      waitOverlay.style.display = "flex";
+    }
+
+    function startWaitTimer() {
+      updateWaitScreen();
+      const interval = setInterval(() => {
+        const now = new Date();
+        const diff = EVENT_DATE.getTime() - now.getTime();
+        if (diff <= 0) {
+          clearInterval(interval);
+          waitOverlay.style.display = "none";
+        } else {
+          updateWaitScreen();
+        }
+      }, 1000);
+    }
+
+    startWaitTimer();
+
+    // ===== كود الصوت والقلوب كما تم ضبطه =====
+
     let stage = 1;
     let heartsInterval = null;
 
     const bgMusic = document.getElementById('bgMusic');
     const voice = document.getElementById('voice');
 
-    // === إعدادات تتحكم فيها أنت ===
-    const CUT_SECONDS = 2;             // كم ثانية تُحذف من نهاية تسجيلك
-    const VOICE_VOLUME = 1.0;          // مستوى صوتك (0–1)
-    const MUSIC_GAIN_DURING = 0.02;    // قوة الموسيقى أثناء قراءتك
-    const MUSIC_GAIN_AFTER = 0.4;      // قوة الموسيقى بعد انتهاء صوتك
-    const MUSIC_FADE_BEFORE_END = 0.0;   // متى يبدأ الفيد قبل النهاية (ثواني)
-    const MUSIC_FADE_DURATION = 2;     // مدة الفيد من المنخفض إلى العالي (ثواني)
-    // ===============================
+    const CUT_SECONDS = 2;
+    const VOICE_VOLUME = 1.0;
+    const MUSIC_GAIN_DURING = 0.02;
+    const MUSIC_GAIN_AFTER = 0.4;
+    const MUSIC_FADE_BEFORE_END = 3;
+    const MUSIC_FADE_DURATION = 2;
 
     let audioCtx = null;
     let musicSource = null;
@@ -323,28 +510,24 @@ HAPPY BIRTHDAY ROAA
         audioCtx.resume();
       }
 
-      // صوتك (volume عادي)
       voice.volume = VOICE_VOLUME;
 
       const now = audioCtx.currentTime;
-      // بداية الموسيقى على مستوى القراءة
       musicGainNode.gain.cancelScheduledValues(now);
       musicGainNode.gain.setValueAtTime(MUSIC_GAIN_DURING, now);
 
-      // تشغيل الاثنين
       bgMusic.play().catch(err => {
         console.log('لم يتم تشغيل bgMusic:', err);
       });
 
       voice.play().then(() => {
         if (voiceDuration && voiceDuration > CUT_SECONDS) {
-          const playUntil = voiceDuration - CUT_SECONDS; // متى نوقف صوتك
+          const playUntil = voiceDuration - CUT_SECONDS;
           const fadeStart = Math.max(0, playUntil - MUSIC_FADE_BEFORE_END);
 
           const startFadeAt = audioCtx.currentTime + Math.max(0, fadeStart - voice.currentTime);
           const endFadeAt = startFadeAt + MUSIC_FADE_DURATION;
 
-          // فيد من مستوى القراءة إلى مستوى ما بعد القراءة
           musicGainNode.gain.cancelScheduledValues(startFadeAt);
           musicGainNode.gain.setValueAtTime(MUSIC_GAIN_DURING, startFadeAt);
           musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, endFadeAt);
