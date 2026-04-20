@@ -17,31 +17,6 @@
       justify-content: center;
       overflow-x: hidden;
       position: relative;
-      padding-top: 70px; /* مساحة للعداد في الأعلى */
-    }
-
-    .countdown-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      padding: 10px 15px;
-      text-align: center;
-      background: linear-gradient(90deg, #ff9a9e, #fecfef);
-      color: #6b1c2b;
-      font-family: 'Aref Ruqaa', serif;
-      z-index: 10000;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    .countdown-time {
-      font-weight: 700;
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-
-    .countdown-label {
-      font-size: 14px;
     }
 
     .stage1 { cursor: pointer; }
@@ -115,7 +90,7 @@
       line-height: 1.3;
       padding: 5px 8px;
       transform: translateY(20px);
-      transition: transform 0.5s ease 1.2s;
+      transition: transform 0.5s.ease 1.2s;
     }
     .stage2 .tip-text { transform: translateY(0); }
 
@@ -236,55 +211,144 @@
       0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
       100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
     }
+
+    /* شاشة الانتظار */
+    .wait-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: #fff;
+      font-family: 'Aref Ruqaa', serif;
+      overflow: hidden;
+    }
+
+    .wait-overlay::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+      z-index: -2;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .wait-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(0,0,0,0.2), transparent 60%);
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+
+    .wait-message {
+      font-size: clamp(20px, 5vw, 26px);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .wait-subtext {
+      font-size: clamp(14px, 4vw, 18px);
+      opacity: 0.9;
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .wait-countdown {
+      font-size: clamp(20px, 5vw, 26px);
+      font-weight: 700;
+      margin-top: 5px;
+    }
+
+    .wait-countdown-label {
+      font-size: clamp(14px, 4vw, 18px);
+      margin-top: 6px;
+      opacity: 0.95;
+    }
+
+    .wait-spinner {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+      margin-bottom: 18px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* نخفي المحتوى الأساسي حتى ينتهي الوقت */
+    .main-content {
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body class="stage1">
-  <!-- شريط العداد في الأعلى -->
-  <div class="countdown-bar">
-    <div class="countdown-time" id="countdownTime">--:--:--</div>
-    <div class="countdown-label" id="countdownLabel">
-      الوقت المتبقي حتى تبدأ اللحظة الخاصة ✨
-    </div>
+  <!-- شاشة الانتظار -->
+  <div class="wait-overlay" id="waitOverlay">
+    <div class="wait-spinner"></div>
+    <div class="wait-message">العد التنازلي حتى اللحظة الخاصة ✨</div>
+    <div class="wait-subtext">لا زال الوقت يتهيّأ لشيء جميل.. راقبي الثواني بهدوء 💫</div>
+    <div class="wait-countdown" id="waitCountdown">--:--:--</div>
+    <div class="wait-countdown-label">حين يصل إلى الصفر، يتغيّر كل شيء هنا 💌</div>
   </div>
 
-  <div class="hearts" id="hearts"></div>
+  <div class="main-content">
+    <div class="hearts" id="hearts"></div>
 
-  <!-- أغنية عيد الميلاد -->
-  <audio id="bgMusic" src="audio.m4a" preload="auto" loop></audio>
+    <!-- أغنية عيد الميلاد -->
+    <audio id="bgMusic" src="audio.m4a" preload="auto" loop></audio>
 
-  <!-- تسجيل صوتك -->
-  <audio id="voice" src="voice.m4a" preload="auto"></audio>
+    <!-- تسجيل صوتك -->
+    <audio id="voice" src="voice.m4a" preload="auto"></audio>
 
-  <div class="envelope-container" id="envelopeContainer">
-    <button class="open-btn">افتحي الرسالة 💌</button>
+    <div class="envelope-container" id="envelopeContainer">
+      <button class="open-btn">افتحي الرسالة 💌</button>
 
-    <div class="envelope">
-      <div class="envelope-back"></div>
-      <div class="envelope-flap"></div>
-      <div class="letter-tip">
-        <div class="tip-text">إلى توأم روحي</div>
-      </div>
-      <div class="pull-text">
-        اسحبي الرسالة
-        <div class="pull-subtext">
+      <div class="envelope">
+        <div class="envelope-back"></div>
+        <div class="envelope-flap"></div>
+        <div class="letter-tip">
+          <div class="tip-text">إلى توأم روحي</div>
+        </div>
+        <div class="pull-text">
+          اسحبي الرسالة
+          <div class="pull-subtext">
 قبل أن تسحبي الرساله وتكتمل الحكاية..
 أريد لقلبكِ أن يسمع ما عجزتُ عن قوله.
 ارفعي صوت جهازكِ قليلاً، ودعي اللحن يخبركِ كم أشتاق إليكِ الآن.
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="letter-content" id="letterContent">
-    <div class="letter-text">
+    <div class="letter-content" id="letterContent">
+      <div class="letter-text">
 إلى توأم روحي وسيدة قلبي..
 
 في كل سنة يأتي يوم ميلادك، أشعر أن العالم يحتفل معكِ، وكأن الحياة تشكركِ لأنكِ منحتِها هذا الجمال. حبيبتي، أنتِ لستِ مجرد زوجة، أنتِ الملاذ الذي أهرع إليه من ضجيج العالم، والسكينة التي تملأ روحي حين تضيق بي السبل.
 
 أكتب لكِ وكلماتي تسبقها نبضات شوقي؛ فمهما كنا قريبين، يظل في قلبي حنين دائم إليكِ، وشغف لا ينطفئ لرؤية ابتسامتكِ التي تجعل كل شيء بخير. أتمنى في عامكِ الجديد أن تحيطكِ السعادة من كل جانب، وأن يظل حبنا ينمو ويزهر، لنصنع ذكريات أجمل وأعمق. كل عام وأنتِ الحب، وكل عام وأنتِ أجمل عطايا الرحمن لي.
-    </div>
-    <div class="birthday-wish">
+      </div>
+      <div class="birthday-wish">
 HAPPY BIRTHDAY ROAA
+      </div>
     </div>
   </div>
 
@@ -293,16 +357,20 @@ HAPPY BIRTHDAY ROAA
     // بداية يوم 23 أبريل 2026 بتوقيت الرياض +03
     const EVENT_DATE = new Date("2026-04-23T00:00:00+03:00");
 
-    const countdownTimeEl = document.getElementById("countdownTime");
-    const countdownLabelEl = document.getElementById("countdownLabel");
+    const waitOverlay = document.getElementById("waitOverlay");
+    const mainContent = document.querySelector(".main-content");
+    const waitCountdownEl = document.getElementById("waitCountdown");
 
-    function updateCountdown() {
+    function updateWaitCountdown() {
       const now = new Date();
       const diff = EVENT_DATE.getTime() - now.getTime();
 
       if (diff <= 0) {
-        countdownTimeEl.textContent = "00:00:00";
-        countdownLabelEl.textContent = "حان الوقت الآن ✨";
+        // انتهى الوقت → إظهار المحتوى وإخفاء شاشة الانتظار
+        waitCountdownEl.textContent = "00:00:00";
+        waitOverlay.style.display = "none";
+        mainContent.style.opacity = "1";
+        mainContent.style.pointerEvents = "auto";
         return;
       }
 
@@ -313,14 +381,14 @@ HAPPY BIRTHDAY ROAA
 
       const pad = (n) => (n < 10 ? "0" + n : "" + n);
 
-      countdownTimeEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:91][web:95]
+      waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:92][web:101]
     }
 
-    // بدء العداد فورًا
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+    // بدء العدّاد على شاشة الانتظار
+    updateWaitCountdown();
+    setInterval(updateWaitCountdown, 1000);
 
-    // ===== كود الصوت والقلوب كما تم ضبطه سابقًا =====
+    // ===== كود الصوت والقلوب كما تم ضبطه =====
     let stage = 1;
     let heartsInterval = null;
 
