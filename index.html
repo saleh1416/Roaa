@@ -399,6 +399,14 @@ HAPPY BIRTHDAY ROAA
       {
         msg: "Not your moment… yet ⌛",
         sub: "The moment is coming, but this isn’t it. Let curiosity rest for a little while 😉"
+      },
+      {
+        msg: "هناك سرّ صغير يكتمل خلف الكواليس 🎬",
+        sub: "اتركي هذه الشاشة الآن، فالمفاجآت لا تحب من يسبقها بثوانٍ كثيرة 💕"
+      },
+      {
+        msg: "Soon this link will feel different 🌸",
+        sub: "For now, let it sleep. Come back when the date feels a bit more special 🌙"
       }
     ];
 
@@ -425,7 +433,6 @@ HAPPY BIRTHDAY ROAA
         return;
       }
 
-      // الرسالة المختارة لهذا الدخول
       waitMessageEl.textContent = pickedMessageOnce.msg;
       waitSubtextEl.textContent = pickedMessageOnce.sub;
 
@@ -440,7 +447,7 @@ HAPPY BIRTHDAY ROAA
 
         const pad = (n) => (n < 10 ? "0" + n : "" + n);
 
-        waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:91][web:95]
         waitCountdownLabelEl.textContent = "الوقت يقترب... العد التنازلي بدأ فعلاً ⏰";
       } else {
         waitCountdownEl.style.display = "none";
