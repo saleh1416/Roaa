@@ -90,7 +90,7 @@
       line-height: 1.3;
       padding: 5px 8px;
       transform: translateY(20px);
-      transition: transform 0.5s.ease 1.2s;
+      transition: transform 0.5s ease 1.2s;
     }
     .stage2 .tip-text { transform: translateY(0); }
 
@@ -292,7 +292,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* نخفي المحتوى الأساسي حتى ينتهي الوقت */
     .main-content {
       opacity: 0;
       pointer-events: none;
@@ -303,10 +302,10 @@
   <!-- شاشة الانتظار -->
   <div class="wait-overlay" id="waitOverlay">
     <div class="wait-spinner"></div>
-    <div class="wait-message">العد التنازلي حتى اللحظة الخاصة ✨</div>
-    <div class="wait-subtext">لا زال الوقت يتهيّأ لشيء جميل.. راقبي الثواني بهدوء 💫</div>
-    <div class="wait-countdown" id="waitCountdown">--:--:--</div>
-    <div class="wait-countdown-label">حين يصل إلى الصفر، يتغيّر كل شيء هنا 💌</div>
+    <div class="wait-message" id="waitMessage"></div>
+    <div class="wait-subtext" id="waitSubtext"></div>
+    <div class="wait-countdown" id="waitCountdown" style="display:none;">--:--:--</div>
+    <div class="wait-countdown-label" id="waitCountdownLabel" style="display:none;"></div>
   </div>
 
   <div class="main-content">
@@ -354,39 +353,125 @@ HAPPY BIRTHDAY ROAA
 
   <script>
     // ===== إعدادات وقت الحدث =====
-    // بداية يوم 23 أبريل 2026 بتوقيت الرياض +03
     const EVENT_DATE = new Date("2026-04-23T00:00:00+03:00");
+    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
     const waitOverlay = document.getElementById("waitOverlay");
     const mainContent = document.querySelector(".main-content");
     const waitCountdownEl = document.getElementById("waitCountdown");
+    const waitCountdownLabelEl = document.getElementById("waitCountdownLabel");
+    const waitMessageEl = document.getElementById("waitMessage");
+    const waitSubtextEl = document.getElementById("waitSubtext");
 
-    function updateWaitCountdown() {
+    // عبارات انتظار حب/تشويق (عربي وإنجليزي + إيموجي)
+    const waitMessages = [
+      {
+        msg: "ليس هذا هو الوقت المناسب بعد ⏳",
+        sub: "كل ما عليكِ الآن هو أن تتركي الفضول يكبر بهدوء... وقلبي يتكفّل بالباقي 💖"
+      },
+      {
+        msg: "Not yet, my heart 💌",
+        sub: "The surprise is still breathing between minutes and seconds. Come back a little later, love ✨"
+      },
+      {
+        msg: "اللحظة الجميلة ما زالت تتدلّل عليكِ 🌙",
+        sub: "اتركي هذه الصفحة الآن، فالمفاجآت تحب من يأتي في الوقت الذي لا يتوقّعه أحد 💫"
+      },
+      {
+        msg: "Soon, but not now 💭",
+        sub: "The story is still writing its sweetest line for you. Close this tab and let time do its magic 💕"
+      },
+      {
+        msg: "قلبي يخبئ لك شيئًا هنا 🎁",
+        sub: "لكن قلب المفاجأة عنيد، لا يفتح بيدٍ مستعجلة. عودي عندما يشعر قلبك أن الجو مختلف 💓"
+      },
+      {
+        msg: "Not your moment yet, pretty soul 🌸",
+        sub: "When the right moment comes, this link will feel like a doorway to something warm and soft 💫"
+      },
+      {
+        msg: "الكون ينسّق لك تفصيلة صغيرة من الفرح 🌠",
+        sub: "دعي كل شيء كما هو الآن، وعودي لتفتحي هذا الرابط عندما يهمس لك قلبك من جديد 💌"
+      },
+      {
+        msg: "Almost there, love ✨",
+        sub: "Not every click should reveal something... but one of them very soon will, just for you 💖"
+      },
+      {
+        msg: "اليوم العادي سيتغيّر... لكن ليس الآن 🎭",
+        sub: "اتركي هذه اللحظة تمر، فهناك لحظة أجمل تنتظركِ حين يعود فضولك مرة أخرى 🕊️"
+      },
+      {
+        msg: "Patience, my favorite human 💞",
+        sub: "Great surprises walk slowly toward the right second. This second isn’t the one… but it’s close 😉"
+      },
+      {
+        msg: "هناك نبضة مختلفة محجوزة لك هنا 💓",
+        sub: "لكنها لا تريد أن تُسمَع قبل وقتها. اغلقي الصفحة وعودي عندما تشعرين بحنينٍ غريب لهذا الرابط ✨"
+      },
+      {
+        msg: "The stars are still getting ready ⭐",
+        sub: "When they align, this page will turn into a little universe made just for your smile 🌌"
+      },
+      {
+        msg: "لسه بدري على السحر الحقيقي 😏",
+        sub: "لو فتحتي الصفحة كثيرًا الآن، تتعب المفاجأة... فدلّليها بالانتظار قليلًا يا أجمل قدر 💕"
+      },
+      {
+        msg: "My surprise is shy tonight 🌙",
+        sub: "It wants you to come back when the time feels a bit more like a movie moment 🎬"
+      }
+    ];
+
+    function pickRandomMessage() {
+      const idx = Math.floor(Math.random() * waitMessages.length);
+      return waitMessages[idx]; // [web:86]
+    }
+
+    // نختار رسالة واحدة لكل دخول
+    const pickedMessageOnce = pickRandomMessage();
+    waitMessageEl.textContent = pickedMessageOnce.msg;
+    waitSubtextEl.textContent = pickedMessageOnce.sub;
+
+    function updateWaitState() {
       const now = new Date();
       const diff = EVENT_DATE.getTime() - now.getTime();
 
       if (diff <= 0) {
-        // انتهى الوقت → إظهار المحتوى وإخفاء شاشة الانتظار
-        waitCountdownEl.textContent = "00:00:00";
+        // الوقت حان → إظهار الصفحة وإخفاء شاشة الانتظار
         waitOverlay.style.display = "none";
         mainContent.style.opacity = "1";
         mainContent.style.pointerEvents = "auto";
         return;
       }
 
-      const totalSeconds = Math.floor(diff / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
+      if (diff <= SIX_HOURS_MS) {
+        // أقل من 6 ساعات → إظهار العدّاد بنمط HH:MM:SS
+        waitCountdownEl.style.display = "block";
+        waitCountdownLabelEl.style.display = "block";
+        waitCountdownLabelEl.textContent = "الوقت يقترب... العد التنازلي بدأ فعلاً ⏰";
 
-      const pad = (n) => (n < 10 ? "0" + n : "" + n);
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
 
-      waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:92][web:101]
+        const pad = (n) => (n < 10 ? "0" + n : "" + n);
+
+        waitCountdownEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`; // [web:92][web:101]
+      } else {
+        // أكثر من 6 ساعات → لا نعرض العدّاد
+        waitCountdownEl.style.display = "none";
+        waitCountdownLabelEl.style.display = "none";
+      }
+
+      // نبقي شاشة الانتظار ظاهرة دائمًا قبل وقت الحدث
+      waitOverlay.style.display = "flex";
     }
 
-    // بدء العدّاد على شاشة الانتظار
-    updateWaitCountdown();
-    setInterval(updateWaitCountdown, 1000);
+    // تحديث فوري، ثم كل ثانية عندما يقترب الوقت
+    updateWaitState();
+    setInterval(updateWaitState, 1000);
 
     // ===== كود الصوت والقلوب كما تم ضبطه =====
     let stage = 1;
