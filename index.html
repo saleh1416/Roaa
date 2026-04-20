@@ -81,10 +81,7 @@
       z-index: 3;
       overflow: hidden;
     }
-    .stage2 .letter-tip {
-      opacity: 1;
-      top: 25px;
-    }
+    .stage2 .letter-tip { opacity: 1; top: 25px; }
 
     .tip-text {
       font-family: 'Aref Ruqaa', serif;
@@ -107,17 +104,14 @@
       color: #ff6b9d;
       font-weight: bold;
       opacity: 0;
-      transition: all 0.5s ease;
+      transition: all 0.5s.ease;
       pointer-events: none;
       z-index: 6;
       text-align: center;
       width: 85%;
     }
     .stage2 .pull-text { opacity: 1; }
-    .stage3 .pull-text {
-      opacity: 0;
-      visibility: hidden;
-    }
+    .stage3 .pull-text { opacity: 0; visibility: hidden; }
 
     .pull-subtext {
       margin-top: 10px;
@@ -143,7 +137,7 @@
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 12px 35px rgba(255, 107, 157, 0.5);
-      transition: all 0.3s.ease;
+      transition: all 0.3s ease;
       z-index: 7;
     }
     .open-btn:hover {
@@ -268,23 +262,20 @@ HAPPY BIRTHDAY ROAA
     const bgMusic = document.getElementById('bgMusic');
     const voice = document.getElementById('voice');
 
-    // === إعدادات الصوت التي تتحكم بها أنت ===
-    const CUT_SECONDS = 2;          // كم ثانية تُحذف من نهاية تسجيلك
-    const VOICE_GAIN = 1.0;         // قوة صوتك أثناء القراءة (gain)
-    const MUSIC_GAIN_DURING = 0.000; // قوة الموسيقى أثناء قراءتك
-    const MUSIC_GAIN_AFTER = 0.5;   // قوة الموسيقى بعد انتهاء/إيقاف صوتك
-    const MUSIC_FADE_BEFORE_END = 0; // متى تبدأ الموسيقى ترتفع قبل النهاية (ثواني)
-    // =====================================
+    // === إعدادات تتحكم فيها أنت ===
+    const CUT_SECONDS = 2;             // كم ثانية تُحذف من نهاية تسجيلك
+    const VOICE_VOLUME = 1.0;          // مستوى صوتك (0–1)
+    const MUSIC_GAIN_DURING = 0.02;    // قوة الموسيقى أثناء قراءتك
+    const MUSIC_GAIN_AFTER = 0.4;      // قوة الموسيقى بعد انتهاء صوتك
+    const MUSIC_FADE_BEFORE_END = 3;   // متى يبدأ الفيد قبل النهاية (ثواني)
+    const MUSIC_FADE_DURATION = 2;     // مدة الفيد من المنخفض إلى العالي (ثواني)
+    // ===============================
 
     let audioCtx = null;
-    let voiceSource = null;
     let musicSource = null;
-    let voiceGainNode = null;
     let musicGainNode = null;
 
     let voiceDuration = null;
-
-    // نقرأ مدة تسجيلك عند تحميله
     voice.addEventListener('loadedmetadata', () => {
       voiceDuration = voice.duration;
     });
@@ -304,7 +295,7 @@ HAPPY BIRTHDAY ROAA
         document.getElementById('envelopeContainer').classList.add('stage3');
         stage = 3;
         startHeartsLoop();
-        startAudioScenarioWithWebAudio();
+        startAudioScenario();
       }
     });
 
@@ -314,27 +305,17 @@ HAPPY BIRTHDAY ROAA
         audioCtx = new AudioContext();
       }
 
-      if (!voiceSource) {
-        voiceSource = audioCtx.createMediaElementSource(voice);
-      }
       if (!musicSource) {
         musicSource = audioCtx.createMediaElementSource(bgMusic);
       }
 
-      if (!voiceGainNode) {
-        voiceGainNode = audioCtx.createGain();
-        voiceGainNode.gain.value = VOICE_GAIN;
-        voiceSource.connect(voiceGainNode).connect(audioCtx.destination);
-      }
-
       if (!musicGainNode) {
         musicGainNode = audioCtx.createGain();
-        musicGainNode.gain.value = 0; // نبدأ الموسيقى صامتة
         musicSource.connect(musicGainNode).connect(audioCtx.destination);
       }
     }
 
-    function startAudioScenarioWithWebAudio() {
+    function startAudioScenario() {
       if (!bgMusic || !voice) return;
 
       initAudioContextIfNeeded();
@@ -342,27 +323,31 @@ HAPPY BIRTHDAY ROAA
         audioCtx.resume();
       }
 
-      // نضبط قيم البداية:
-      voiceGainNode.gain.setValueAtTime(VOICE_GAIN, audioCtx.currentTime);
-      musicGainNode.gain.setValueAtTime(MUSIC_GAIN_DURING, audioCtx.currentTime);
+      // صوتك (volume عادي)
+      voice.volume = VOICE_VOLUME;
 
+      const now = audioCtx.currentTime;
+      // بداية الموسيقى على مستوى القراءة
+      musicGainNode.gain.cancelScheduledValues(now);
+      musicGainNode.gain.setValueAtTime(MUSIC_GAIN_DURING, now);
+
+      // تشغيل الاثنين
       bgMusic.play().catch(err => {
         console.log('لم يتم تشغيل bgMusic:', err);
       });
 
       voice.play().then(() => {
         if (voiceDuration && voiceDuration > CUT_SECONDS) {
-          const playUntil = voiceDuration - CUT_SECONDS;
+          const playUntil = voiceDuration - CUT_SECONDS; // متى نوقف صوتك
           const fadeStart = Math.max(0, playUntil - MUSIC_FADE_BEFORE_END);
 
-          // نرفع الموسيقى تدريجيًا من MUSIC_GAIN_DURING إلى MUSIC_GAIN_AFTER
-          const now = audioCtx.currentTime;
-          const fadeStartAt = now + Math.max(0, fadeStart - voice.currentTime);
-          const fadeEndAt = now + Math.max(0, playUntil - voice.currentTime);
+          const startFadeAt = audioCtx.currentTime + Math.max(0, fadeStart - voice.currentTime);
+          const endFadeAt = startFadeAt + MUSIC_FADE_DURATION;
 
-          musicGainNode.gain.cancelScheduledValues(now);
-          musicGainNode.gain.setValueAtTime(musicGainNode.gain.value, now);
-          musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, fadeEndAt);
+          // فيد من مستوى القراءة إلى مستوى ما بعد القراءة
+          musicGainNode.gain.cancelScheduledValues(startFadeAt);
+          musicGainNode.gain.setValueAtTime(MUSIC_GAIN_DURING, startFadeAt);
+          musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, endFadeAt);
 
           const msUntilStop = (playUntil - voice.currentTime) * 1000;
           if (msUntilStop > 0) {
@@ -377,10 +362,10 @@ HAPPY BIRTHDAY ROAA
           }
         } else {
           voice.addEventListener('ended', () => {
-            const now = audioCtx.currentTime;
-            musicGainNode.gain.cancelScheduledValues(now);
-            musicGainNode.gain.setValueAtTime(musicGainNode.gain.value, now);
-            musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, now + 1.5);
+            const now2 = audioCtx.currentTime;
+            musicGainNode.gain.cancelScheduledValues(now2);
+            musicGainNode.gain.setValueAtTime(musicGainNode.gain.value, now2);
+            musicGainNode.gain.linearRampToValueAtTime(MUSIC_GAIN_AFTER, now2 + MUSIC_FADE_DURATION);
           }, { once: true });
         }
       }).catch(err => {
